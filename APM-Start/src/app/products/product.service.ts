@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { Observable, throwError, combineLatest } from 'rxjs';
+import { Observable, throwError, combineLatest, BehaviorSubject } from 'rxjs';
 import { catchError, tap, map } from 'rxjs/operators';
 
 import { Product } from './product';
@@ -13,7 +13,7 @@ import { ProductCategoryService } from '../product-categories/product-category.s
   providedIn: 'root'
 })
 export class ProductService {
-  private productsUrl = 'api/products';
+  private productsUrl = 'api/product';
   private suppliersUrl = this.supplierService.suppliersUrl;
 
   products$ = this.http.get<Product[]>(this.productsUrl)
@@ -35,9 +35,23 @@ export class ProductService {
           searchKey: [p.productName]
         }
         ) as Product)),
-      tap(data => console.log('Products: ', JSON.stringify(data))),
+      tap(data => console.log('Products with Category Name: ', JSON.stringify(data))),
       catchError(this.handleError)
     );
+
+  private productSelectedSubject = new BehaviorSubject<number>(0);
+  productSelectedAction$ = this.productSelectedSubject.asObservable();
+
+  selectedProduct$ = combineLatest([this.productsWithCategory$, this.productSelectedAction$])
+        .pipe(
+          map(([products, selectedProductId]) => products.find(p => p.id === selectedProductId)),
+          tap(product => console.log("Selected Product", product))
+        );
+  
+  selectedProductChanged(productId: number): void
+  {
+    this.productSelectedSubject.next(productId);
+  } 
 
   constructor(private http: HttpClient,
               private supplierService: SupplierService,
@@ -59,6 +73,10 @@ export class ProductService {
   private handleError(err: any): Observable<never> {
     // in a real world app, we may send the server to some remote logging infrastructure
     // instead of just logging it to the console
+    if (typeof err == "string")
+    {
+      return throwError(err);
+    }
     let errorMessage: string;
     if (err.error instanceof ErrorEvent) {
       // A client-side or network error occurred. Handle it accordingly.
