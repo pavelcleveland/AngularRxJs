@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { throwError, Observable } from 'rxjs';
+import { throwError, Observable, of } from 'rxjs';
+import { httpClientInMemBackendServiceFactory } from 'angular-in-memory-web-api';
+import { map, tap, concatMap } from 'rxjs/operators';
+import { Supplier } from './supplier';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +12,29 @@ import { throwError, Observable } from 'rxjs';
 export class SupplierService {
   suppliersUrl = 'api/suppliers';
 
-  constructor(private http: HttpClient) { }
+  suppliersWithMap$ = of(1, 5, 8)
+    .pipe(
+      map(id => this.http.get<Supplier>(`${this.suppliersUrl}/${id}`))
+    );
+  
+  suppliersWithConcatMap$ = of(1, 5, 8)
+  .pipe(
+    tap(id => console.log("concatMap source Observable", id)),
+    concatMap(id => this.http.get<Supplier>(`${this.suppliersUrl}/${id}`))
+  );
+  
+
+  constructor(private http: HttpClient) 
+  { 
+    /*
+    this.suppliersWithMap$.subscribe(o => o.subscribe(
+      item => console.log('map result', item))
+    );
+    */
+   this.suppliersWithConcatMap$.subscribe(
+     item => console.log("concat map result", item)
+    );
+  }
 
   private handleError(err: any): Observable<never> {
     // in a real world app, we may send the server to some remote logging infrastructure

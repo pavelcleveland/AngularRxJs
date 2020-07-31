@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 import { Observable, throwError, combineLatest, BehaviorSubject, Subject, merge } from 'rxjs';
-import { catchError, tap, map, scan } from 'rxjs/operators';
+import { catchError, tap, map, scan, shareReplay } from 'rxjs/operators';
 
 import { Product } from './product';
 import { Supplier } from '../suppliers/supplier';
@@ -36,6 +36,7 @@ export class ProductService {
         }
         ) as Product)),
       tap(data => console.log('Products with Category Name: ', JSON.stringify(data))),
+      shareReplay(1),
       catchError(this.handleError)
     );
 
@@ -45,7 +46,8 @@ export class ProductService {
   selectedProduct$ = combineLatest([this.productsWithCategory$, this.productSelectedAction$])
         .pipe(
           map(([products, selectedProductId]) => products.find(p => p.id === selectedProductId)),
-          tap(product => console.log("Selected Product", product))
+          tap(product => console.log("Selected Product", product)),
+          shareReplay(1)
         );
   
   selectedProductChanged(productId: number): void
