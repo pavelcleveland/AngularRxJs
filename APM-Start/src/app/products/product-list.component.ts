@@ -27,7 +27,7 @@ export class ProductListComponent implements OnInit {
       })
     );
 
-  products$ = combineLatest([this.productService.productsWithCategory$, this.categorySelectedAction$]) 
+  products$ = combineLatest([this.productService.productsWithAdd$, this.categorySelectedAction$]) 
     .pipe(
       map(([products, selectedCategoryId]) =>
         products.filter(product => selectedCategoryId ? product.categoryId === selectedCategoryId : true)),
@@ -43,7 +43,7 @@ export class ProductListComponent implements OnInit {
   }
 
   onAdd(): void {
-    console.log('Not yet implemented');
+    this.productService.addProduct();
   }
 
   onSelected(categoryId: string): void {
