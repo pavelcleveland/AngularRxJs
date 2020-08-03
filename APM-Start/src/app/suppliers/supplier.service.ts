@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 
 import { throwError, Observable, of } from 'rxjs';
 import { httpClientInMemBackendServiceFactory } from 'angular-in-memory-web-api';
-import { map, tap, concatMap } from 'rxjs/operators';
+import { map, tap, concatMap, mergeMap, switchMap, shareReplay, catchError } from 'rxjs/operators';
 import { Supplier } from './supplier';
 
 @Injectable({
@@ -11,6 +11,13 @@ import { Supplier } from './supplier';
 })
 export class SupplierService {
   suppliersUrl = 'api/suppliers';
+
+  suppliers$ = this.http.get<Supplier[]>(this.suppliersUrl)
+    .pipe(
+      tap(item => console.log("supplier", JSON.stringify(item))),
+      shareReplay(1),
+      catchError(this.handleError)
+    );
 
   suppliersWithMap$ = of(1, 5, 8)
     .pipe(
@@ -22,7 +29,16 @@ export class SupplierService {
     tap(id => console.log("concatMap source Observable", id)),
     concatMap(id => this.http.get<Supplier>(`${this.suppliersUrl}/${id}`))
   );
-  
+  suppliersWithMergeMap$ = of(1, 5, 8)
+  .pipe(
+    tap(id => console.log("mergeMap source Observable", id)),
+    mergeMap(id => this.http.get<Supplier>(`${this.suppliersUrl}/${id}`))
+  );
+  suppliersWithSwitchMap$ = of(1, 5, 8)
+  .pipe(
+    tap(id => console.log("switchMap source Observable", id)),
+    switchMap(id => this.http.get<Supplier>(`${this.suppliersUrl}/${id}`))
+  );
 
   constructor(private http: HttpClient) 
   { 
@@ -30,10 +46,16 @@ export class SupplierService {
     this.suppliersWithMap$.subscribe(o => o.subscribe(
       item => console.log('map result', item))
     );
-    */
-   this.suppliersWithConcatMap$.subscribe(
-     item => console.log("concat map result", item)
+    this.suppliersWithConcatMap$.subscribe(
+      item => console.log("concat map result", item)
     );
+    this.suppliersWithMergeMap$.subscribe(
+      item => console.log("merge map result", item)
+    );
+    this.suppliersWithSwitchMap$.subscribe(
+      item => console.log("switch map result", item)
+    );
+    */
   }
 
   private handleError(err: any): Observable<never> {
